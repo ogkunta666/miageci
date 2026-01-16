@@ -33,7 +33,7 @@ export class CourseService {
   }
 
   getCourse(id: number): Observable<Course> {
-    return this.http.get<Course>(`${this.apiUrl}/${id}`);
+    return this.http.get<Course>(\`\${this.apiUrl}/\${id}\`);
   }
 
   createCourse(course: Course): Observable<Course> {
@@ -43,13 +43,13 @@ export class CourseService {
   }
 
   updateCourse(id: number, course: Course): Observable<Course> {
-    return this.http.put<Course>(`${this.apiUrl}/${id}`, course).pipe(
+    return this.http.put<Course>(\`\${this.apiUrl}/\${id}\`, course).pipe(
       tap(() => this.getCourses().subscribe())
     );
   }
 
   deleteCourse(id: number): Observable<void> {
-    return this.http.delete<void>(`${this.apiUrl}/${id}`).pipe(
+    return this.http.delete<void>(\`\${this.apiUrl}/\${id}\`).pipe(
       tap(() => this.getCourses().subscribe())
     );
   }
