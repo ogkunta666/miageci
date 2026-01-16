@@ -1,0 +1,1 @@
+(the complete Angular root component with navigation)

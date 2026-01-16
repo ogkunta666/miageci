@@ -1,0 +1,1 @@
+(all TypeScript interfaces)
