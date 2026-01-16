@@ -1,0 +1,1 @@
+{\n    "require": {\n        "laravel/framework": "^10.0",\n        "pusher/pusher-php-server": "^7.0"\n    },\n    "require-dev": {\n        "phpunit/phpunit": "^10.0",\n        "mockery/mockery": "^1.5"\n    }\n}
