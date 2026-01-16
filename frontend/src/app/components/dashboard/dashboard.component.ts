@@ -1,49 +1,92 @@
-import { Component, OnDestroy, OnInit } from '@angular/core';
-import { BehaviorSubject, Subscription } from 'rxjs';
-import { CourseService } from '../services/course.service';
+import { Component, OnInit, OnDestroy } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { DashboardService } from '../../services/dashboard.service';
+import { WebsocketService } from '../../services/websocket.service';
+import { DashboardStats } from '../../models/models';
+import { Subject, takeUntil } from 'rxjs';
 
 @Component({
   selector: 'app-dashboard',
+  standalone: true,
+  imports: [CommonModule],
   template: `
-    <div class="dashboard-container">
-      <h1>Course Statistics</h1>
-      <div class="card-container">
-        <mat-card class="stat-card">
-          <mat-card-title>Total Courses</mat-card-title>
-          <mat-card-content>{{ totalCourses$ | async }}</mat-card-content>
-        </mat-card>
-        <mat-card class="stat-card">
-          <mat-card-title>Active Courses</mat-card-title>
-          <mat-card-content>{{ activeCourses$ | async }}</mat-card-content>
-        </mat-card>
-        <mat-card class="stat-card">
-          <mat-card-title>Completed Courses</mat-card-title>
-          <mat-card-content>{{ completedCourses$ | async }}</mat-card-content>
-        </mat-card>
+    <div class="dashboard">
+      <h1>Dashboard</h1>
+      
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-icon">
+            <span class="material-icons">school</span>
+          </div>
+          <div class="stat-content">
+            <h3>Total Courses</h3>
+            <p class="stat-value">{{ stats.total_courses }}</p>
+          </div>
+        </div>
+        
+        <div class="stat-card active">
+          <div class="stat-icon">
+            <span class="material-icons">play_circle</span>
+          </div>
+          <div class="stat-content">
+            <h3>Active Courses</h3>
+            <p class="stat-value">{{ stats.active_courses }}</p>
+          </div>
+        </div>
+        
+        <div class="stat-card completed">
+          <div class="stat-icon">
+            <span class="material-icons">check_circle</span>
+          </div>
+          <div class="stat-content">
+            <h3>Completed Courses</h3>
+            <p class="stat-value">{{ stats.completed_courses }}</p>
+          </div>
+        </div>
       </div>
     </div>
   `,
-  styles: [`.dashboard-container { display: flex; flex-direction: column; align-items: center; } .card-container { display: flex; justify-content: space-around; width: 100%; } .stat-card { width: 30%; }`],
+  styles: [``]
 })
 export class DashboardComponent implements OnInit, OnDestroy {
-  totalCourses$ = new BehaviorSubject<number>(0);
-  activeCourses$ = new BehaviorSubject<number>(0);
-  completedCourses$ = new BehaviorSubject<number>(0);
-  private subscriptions: Subscription = new Subscription();
+  stats: DashboardStats = {
+    total_courses: 0,
+    active_courses: 0,
+    completed_courses: 0
+  };
+  
+  private destroy$ = new Subject<void>();
 
-  constructor(private courseService: CourseService) {}
+  constructor(
+    private dashboardService: DashboardService,
+    private websocketService: WebsocketService
+  ) {}
 
   ngOnInit() {
-    this.subscriptions.add(
-      this.courseService.getCourseStatistics().subscribe(statistics => {
-        this.totalCourses$.next(statistics.total);
-        this.activeCourses$.next(statistics.active);
-        this.completedCourses$.next(statistics.completed);
-      })
-    );
+    this.loadStats();
+    this.listenToWebSocket();
   }
 
   ngOnDestroy() {
-    this.subscriptions.unsubscribe();
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
+  loadStats() {
+    this.dashboardService.stats$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(stats => {
+        this.stats = stats;
+      });
+    
+    this.dashboardService.getStats().subscribe();
+  }
+
+  listenToWebSocket() {
+    this.websocketService.listen('CourseCreated')
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(() => {
+        this.dashboardService.getStats().subscribe();
+      });
   }
 }
